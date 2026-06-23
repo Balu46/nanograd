@@ -2,8 +2,8 @@ import pytest
 import numpy as np
 import torch
 from nanograd.tensor import Tensor
-from nanograd.nn import relu, Layer, MLP
-from nanograd.loss import MSE
+from nanograd.nn import relu, softmax, Layer, MLP
+from nanograd.loss import MSE, SoftmaxCrossEntropy
 from nanograd.optim import SGD
 
 def test_relu():
@@ -142,3 +142,68 @@ def test_loss_and_optimizer():
     np.testing.assert_allclose(loss.data, loss_pt.detach().numpy(), rtol=1e-5)
     np.testing.assert_allclose(w_grad_nano, w_pt.grad.numpy(), rtol=1e-5)
     np.testing.assert_allclose(b_grad_nano, b_pt.grad.numpy(), rtol=1e-5)
+
+def test_softmax():
+    """
+    Tests the softmax activation function's forward and backward passes.
+    Compares the calculated outputs and gradients against PyTorch's torch.softmax.
+    """
+    x_data = np.array([[1.0, 2.0, 3.0], 
+                       [-1.0, 0.0, 1.0], 
+                       [2.0, 2.0, 2.0]])
+    weights_data = np.array([[0.2, 0.5, 0.3],
+                             [0.1, 0.8, 0.1],
+                             [0.4, 0.4, 0.2]])
+    
+    # 1. Forward and backward pass in nanograd
+    x_nano = Tensor(x_data)
+    out_nano = softmax(x_nano)
+    # Perform a weighted sum to ensure non-zero gradients
+    loss_nano = (out_nano * Tensor(weights_data)).sum()
+    loss_nano.backward()
+
+    # 2. Forward and backward pass in PyTorch
+    x_pt = torch.tensor(x_data, requires_grad=True, dtype=torch.double)
+    out_pt = torch.softmax(x_pt, dim=1)
+    weights_pt = torch.tensor(weights_data, dtype=torch.double)
+    loss_pt = (out_pt * weights_pt).sum()
+    loss_pt.backward()
+
+    # 3. Verify correctness
+    np.testing.assert_allclose(out_nano.data, out_pt.detach().numpy(), rtol=1e-5, err_msg="Softmax forward values mismatch")
+    np.testing.assert_allclose(x_nano.grad, x_pt.grad.numpy(), rtol=1e-5, err_msg="Softmax backward gradients mismatch")
+
+def test_softmax_cross_entropy():
+    """
+    Tests the SoftmaxCrossEntropy loss function's forward and backward passes.
+    Compares the loss values and gradients of logits against PyTorch's formulation.
+    """
+    # 3 samples, 3 classes
+    logits_data = np.array([[1.5, -0.5, 2.0],
+                            [0.0, 1.0, -1.0],
+                            [-2.0, 2.0, 0.5]])
+    
+    # Soft target probability distributions (each row sums to 1.0)
+    targets_data = np.array([[0.0, 0.0, 1.0],
+                             [0.1, 0.8, 0.1],
+                             [0.0, 1.0, 0.0]])
+    
+    # 1. Forward and backward pass in nanograd
+    y_pred_nano = Tensor(logits_data, label='logits')
+    y_true_nano = Tensor(targets_data, label='targets')
+    criterion = SoftmaxCrossEntropy()
+    loss_nano = criterion(y_pred_nano, y_true_nano)
+    loss_nano.backward()
+    
+    # 2. Forward and backward pass in PyTorch using manual formulation of softmax CE with soft targets
+    y_pred_pt = torch.tensor(logits_data, requires_grad=True, dtype=torch.double)
+    y_true_pt = torch.tensor(targets_data, requires_grad=False, dtype=torch.double)
+    
+    log_probs = torch.log_softmax(y_pred_pt, dim=1)
+    loss_pt = -(y_true_pt * log_probs).sum() / logits_data.shape[0]
+    loss_pt.backward()
+    
+    # 3. Verify correctness
+    np.testing.assert_allclose(loss_nano.data, loss_pt.detach().numpy(), rtol=1e-5, err_msg="SoftmaxCrossEntropy forward loss mismatch")
+    np.testing.assert_allclose(y_pred_nano.grad, y_pred_pt.grad.numpy(), rtol=1e-5, err_msg="SoftmaxCrossEntropy backward gradients mismatch")
+

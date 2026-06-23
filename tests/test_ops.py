@@ -48,6 +48,7 @@ def test_binary_operations(op_name, op_nano, op_torch):
     ("negation (-x)", lambda x: -x, lambda x: -x),
     ("exp", lambda x: x.exp(), lambda x: torch.exp(x)),
     ("sum", lambda x: x.sum(), lambda x: torch.sum(x)),
+    ("max", lambda x: x.max(), lambda x: torch.max(x)),
 ])
 def test_unary_operations(op_name, op_nano, op_torch):
     """Tests unary operations performed on a single Tensor."""

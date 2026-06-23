@@ -127,6 +127,24 @@ class Tensor:
         out._backward = _backward
         return out
     
+    def max(self):
+        """
+        Computes the maximum value across all elements of the tensor.
+        Returns a scalar Tensor.
+        """
+        # Forward pass: compute the global maximum value
+        out = Tensor(self.data.max(), (self,), 'max', label=f'max({self.label})')
+        
+        def _backward():
+            # Backward pass: gradient flows only through the element(s) that achieved the maximum value.
+            # Create a boolean mask indicating which elements equal the maximum.
+            mask = (self.data == out.data)
+            # Propagate the gradient back to those elements.
+            self.grad += mask * out.grad
+        
+        out._backward = _backward
+        return out
+    
     def __neg__(self):
         return self * -1
         

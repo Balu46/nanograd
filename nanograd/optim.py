@@ -24,3 +24,11 @@ class SGD:
         """
         for param in self.model_params:
             param.grad = np.zeros(param.data.shape)
+
+
+class Adam:
+    """
+    Adam optimizer.
+    """
+    # TODO: Implement the Adam optimizer (initialize parameters, state, step, etc.)
+    pass
