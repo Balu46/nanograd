@@ -1,4 +1,4 @@
-# Nanograd 🧠
+# Nanograd
 
 **Nanograd** is a lightweight, educational autograd (automatic differentiation) engine written in Python. It supports vector and matrix operations using `NumPy` under the hood and provides an API heavily inspired by PyTorch.
 
