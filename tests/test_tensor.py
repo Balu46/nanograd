@@ -2,21 +2,51 @@ import os
 import sys
 import numpy as np
 import pytest
+import torch
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from nanograd.tensor import Tensor
 
-def test_tensor_initialization():
-    # Inicjalizacja z listy
-    t1 = Tensor([1.0, 2.0, 3.0])
-    assert isinstance(t1.data, np.ndarray), "Dane powinny być trzymane jako np.ndarray"
-    assert t1.data.tolist() == [1.0, 2.0, 3.0]
+def test_autograd_complex_expression():
+    """
+    Tests the expression: e = c * (a + b) and compares the gradients with PyTorch.
+    """
+    # 1. PREPARE DATA
+    a_data = [[1.0, 2.0], [3.0, 4.0]]
+    b_data = [[5.0, 6.0], [7.0, 8.0]]
+    c_data = [[1.0, 2.0], [1.0, 1.0]]
+
+    # 2. COMPUTATIONS IN YOUR ENGINE (nanograd)
+    a_nano = Tensor(np.array(a_data), label='a')
+    b_nano = Tensor(np.array(b_data), label='b')
+    c_nano = Tensor(np.array(c_data), label='c')
+
+    e_nano = c_nano * (a_nano + b_nano)
+    e_nano.backward()
+
+    # 3. COMPUTATIONS IN THE REFERENCE ENGINE (PyTorch)
+    a_pt = torch.tensor(a_data, requires_grad=True)
+    b_pt = torch.tensor(b_data, requires_grad=True)
+    c_pt = torch.tensor(c_data, requires_grad=True)
+
+    e_pt = c_pt * (a_pt + b_pt)
+    e_pt.backward(torch.ones_like(e_pt))
+
+    # 4. ASSERTIONS (VERIFY RESULTS)
+    # Check if the output values (forward pass) are equal
+    np.testing.assert_allclose(e_nano.data, e_pt.detach().numpy(), err_msg="Error in forward pass")
+
+    # Check if the gradients (backward pass) are equal
+    np.testing.assert_allclose(a_nano.grad, a_pt.grad.numpy(), err_msg="Incorrect gradient for 'a'")
+    np.testing.assert_allclose(b_nano.grad, b_pt.grad.numpy(), err_msg="Incorrect gradient for 'b'")
+    np.testing.assert_allclose(c_nano.grad, c_pt.grad.numpy(), err_msg="Incorrect gradient for 'c'")
+
+def test_simple_addition():
+    """A smaller test verifying addition only."""
+    a = Tensor(np.array([1.0, 2.0]))
+    b = Tensor(np.array([3.0, 4.0]))
+    c = a + b
+    c.backward()
     
-    # Inicjalizacja bezpośrednio z tablicy NumPy
-    t2 = Tensor(np.array([[1.0, 2.0], [3.0, 4.0]]))
-    assert t2.data.shape == (2, 2)
-    
-    # Inicjalizacja gradientu
-    assert t2.grad is not None, "Gradient musi być zainicjalizowany"
-    assert t2.grad.shape == t2.data.shape, "Gradient musi mieć ten sam wymiar co dane"
-    assert np.all(t2.grad == 0), "Początkowy gradient powinien składać się z samych zer"
+    # The derivative of addition is always 1 for each element
+    np.testing.assert_allclose(a.grad, np.array([1.0, 1.0]))
+    np.testing.assert_allclose(b.grad, np.array([1.0, 1.0]))

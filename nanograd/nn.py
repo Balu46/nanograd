@@ -1,66 +1,61 @@
 import numpy as np
 import math
 import random
-from tensor import Tensor
+from .tensor import Tensor, reduce_grad
 
-def Relu(x: Tensor):
-    out = Tensor(np.maximum(0, x.data), (x,), 'Relu', label=f'Relu({x.label})')
+def relu(x: Tensor) -> Tensor:
+    """
+    Applies the rectified linear unit (ReLU) activation function element-wise.
+    """
+    out = Tensor(np.maximum(0, x.data), (x,), 'relu', label=f'relu({x.label})')
+    
+    def _backward():
+        dx = (x.data > 0) * out.grad
+        x.grad = x.grad + reduce_grad(dx, x.data.shape)
+        
+    out._backward = _backward
     return out
 
-class neuron:
-    def __init__(self, weights: Tensor, bias: Tensor, activation_function=Relu):
-        self.weights = weights
-        self.bias = bias
-        self.activation = activation_function
-        
-    
-    def __call__(self, x: Tensor):
-        # print(type(self.weights))
-        # print(type(x))
-        return self.activation((self.weights * x).sum() + self.bias)
-    
-    
-    
-    
-class layer:
-    def __init__(self, num_neurons, num_inputs, activation_function=Relu):
-        self.neurons = []
+class Layer:
+    """
+    Represents a single fully-connected neural network layer.
+    """
+    def __init__(self, num_neurons: int, num_inputs: int, activation_function=relu):
         self.num_inputs = num_inputs
+        self.activation_function = activation_function
+        # Randomly initialize weights and biases in the range [-1, 1]
+        self.weights = Tensor(np.random.uniform(-1, 1, size=(num_inputs, num_neurons)), label='w')
+        self.bias = Tensor(np.random.uniform(-1, 1, size=(1, num_neurons)), label='b')
         
-        for i in range(num_neurons):
-            weights = Tensor(np.random.rand(num_inputs), label=f'w{i}')
-            bias = Tensor(np.random.rand(1), label=f'b{i}')
-            self.neurons.append(neuron(weights, bias, activation_function))
-            
-    def __call__(self, x: Tensor):
-        out = []
-        for i in self.neurons:
-            out.append(i(x))
-        return Tensor(np.array(out), label=f'layer({x.label})')
+    def __call__(self, x: Tensor) -> Tensor:
+        # Linear transform followed by activation function
+        x = (x @ self.weights) + self.bias
+        x = self.activation_function(x)
+        return x
     
-class Mlp:
-    def __init__(self, num_layers, activation_function=Relu):
-        self.layers = []
+class MLP:
+    """
+    Represents a Multi-Layer Perceptron (MLP) neural network.
+    """
+    def __init__(self, num_layers: list, activation_function=relu):
         self.activation_function = activation_function
         self.num_layers = num_layers
+        self.layers = []
         
-        
+        # Instantiate layers matching the size configurations
         for i in range(len(num_layers) - 1):
-            self.layers.append(layer(num_layers[i + 1], num_layers[i], activation_function))
+            self.layers.append(Layer(num_layers[i + 1], num_layers[i], activation_function))
             
-    def __call__(self, x: Tensor):
-        out = x
-        for i in self.layers:
-            out = i(out)
-        return out
-            
+    def __call__(self, x: Tensor) -> Tensor:
+        # Feed-forward through all layers
+        for layer in self.layers:
+            x = layer(x)
+        return x
 
-if __name__ == "__main__":
-    mlp = Mlp([2, 3, 1], Relu)
-    x = Tensor(np.array([1, 2]), label='x')
-    out = mlp(x)
-    
-    
-    
-    
-    
+    def params(self) -> list:
+        # Collect and return weights and biases from all layers
+        params = []
+        for layer in self.layers:
+            params.append(layer.weights)
+            params.append(layer.bias)
+        return params
