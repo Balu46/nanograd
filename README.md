@@ -82,6 +82,12 @@ pip install -e .
 pip install -e ".[dev]"
 ```
 
+### Install directly from GitHub
+You can install the package directly from the GitHub repository using pip:
+```bash
+pip install git+https://github.com/Balu46/nanograd.git
+```
+
 ---
 
 ## Quick Start
