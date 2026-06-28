@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import torch
 from nanograd.tensor import Tensor
-from nanograd.nn import relu, softmax, Layer, MLP, Conv2D, MaxPool2D
+from nanograd.nn import relu, softmax, Layer, MLP, Conv2D, MaxPool2D, Flatten
 from nanograd.loss import MSE, SoftmaxCrossEntropy
 from nanograd.optim import SGD, Adam
 import torch.nn.functional as F
@@ -324,5 +324,31 @@ def test_adam():
         # Compare weights and biases after each step
         np.testing.assert_allclose(w_nano.data, w_pt.detach().numpy(), rtol=1e-5, err_msg=f"Adam weight mismatch at step {step}")
         np.testing.assert_allclose(b_nano.data, b_pt.detach().numpy(), rtol=1e-5, err_msg=f"Adam bias mismatch at step {step}")
+
+def test_flatten():
+    """
+    Tests the Flatten layer's forward and backward passes against PyTorch.
+    """
+    np.random.seed(42)
+    
+    # 1. Input data of shape (batch_size=2, channels=3, height=4, width=4)
+    x_data = np.random.uniform(-1, 1, size=(2, 3, 4, 4))
+    
+    x_nano = Tensor(x_data)
+    flatten_nano = Flatten()
+    out_nano = flatten_nano(x_nano)
+    loss_nano = out_nano.sum()
+    loss_nano.backward()
+    
+    # 2. PyTorch equivalent
+    x_pt = torch.tensor(x_data, requires_grad=True, dtype=torch.double)
+    out_pt = torch.flatten(x_pt, start_dim=1)
+    loss_pt = out_pt.sum()
+    loss_pt.backward()
+    
+    # 3. Assertions
+    np.testing.assert_allclose(out_nano.data, out_pt.detach().numpy(), rtol=1e-5, err_msg="Flatten forward pass mismatch")
+    np.testing.assert_allclose(x_nano.grad, x_pt.grad.numpy(), rtol=1e-5, err_msg="Flatten input gradient mismatch")
+
 
 

@@ -102,7 +102,10 @@ class Tensor:
         out = Tensor(self.data ** other.data, (self, other), '**', label=f'({self.label}**{other.label})')
         def _backward():
             dself = other.data * (self.data ** (other.data - 1.0)) * out.grad
-            dother = (self.data ** other.data) * np.log(self.data) * out.grad
+            # Compute log safely only where base is strictly positive to prevent RuntimeWarnings and NaNs
+            with np.errstate(divide='ignore', invalid='ignore'):
+                log_data = np.where(self.data > 0, np.log(np.abs(self.data)), 0.0)
+            dother = (self.data ** other.data) * log_data * out.grad
             self.grad = self.grad + reduce_grad(dself, self.data.shape)
             other.grad = other.grad + reduce_grad(dother, other.data.shape)
         out._backward = _backward

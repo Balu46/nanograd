@@ -65,6 +65,8 @@ class Layer:
         x = (x @ self.weights) + self.bias
         x = self.activation_function(x)
         return x
+    def model_params(self) -> list:
+        return [self.weights, self.bias]
     
 class MLP:
     """
@@ -89,8 +91,7 @@ class MLP:
         # Collect and return weights and biases from all layers
         params = []
         for layer in self.layers:
-            params.append(layer.weights)
-            params.append(layer.bias)
+            params.extend(layer.model_params())
         return params
     
     
@@ -291,5 +292,37 @@ class MaxPool2D:
             
         y._backward = _backward
         return y
+
+
+class Flatten:
+    """
+    Flattens a multi-dimensional input tensor (typically 4D: batch_size, channels, height, width) 
+    to a 2D tensor of shape (batch_size, features), preserving the batch dimension.
+    This is commonly used to bridge convolutional/pooling layers and fully-connected layers.
+    """
+    def __init__(self):
+        pass
+
+    def __call__(self, x: Tensor) -> Tensor:
+        # Forward pass:
+        # Save the original shape for the backward pass reconstruction.
+        original_shape = x.data.shape
+        # Flatten all dimensions except the batch dimension (axis 0).
+        x_flat_data = x.data.reshape((original_shape[0], original_shape[1] * original_shape[2] * original_shape[3]))
+        
+        # Package the result in a Tensor tracking the input 'x' as a dependency.
+        x_flat = Tensor(x_flat_data, (x,), 'flatten', label=f'flatten({x.label})')
+        
+        def _backward():
+            # Backward pass:
+            # Reshape the upstream gradient back to the original shape of the input tensor.
+            x_flat_grad = x_flat.grad.reshape(original_shape)
+            # Accumulate the gradients back to the input tensor.
+            x.grad += x_flat_grad
+            
+        x_flat._backward = _backward
+        return x_flat
+
+
 
 
