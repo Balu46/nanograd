@@ -56,8 +56,7 @@ Autograd/
 │   ├── mnist_cnn_tutorial.ipynb      # Recreating LeNet-5 CNN on MNIST (96% acc)
 │   ├── polynomial_regression.ipynb   # Fitting polynomial to sine curve via raw Tensors
 │   ├── multiclass_spirals.ipynb      # 3-class spiral classification with softmax
-│   ├── loss_landscape_optimization.ipynb # Visualizing SGD vs Adam paths on Beale's surface
-│   └── autoencoder_mnist.ipynb       # Unsupervised MNIST Autoencoder & 2D bottleneck projection
+│   └── loss_landscape_optimization.ipynb # Visualizing SGD vs Adam paths on Beale's surface
 │
 ├── tests/                    # Unit tests comparing results with PyTorch
 │   ├── __init__.py
@@ -213,9 +212,6 @@ We provide six interactive Jupyter Notebooks in the `examples/` directory to hel
 5.  **[loss_landscape_optimization.ipynb](examples/loss_landscape_optimization.ipynb) (Optimizer Trajectories)**:
     *   Trace the optimization path of SGD vs Adam on Beale's plateau function.
     *   Observe how Adam dynamically adjusts step size to navigate sharp valleys.
-6.  **[autoencoder_mnist.ipynb](examples/autoencoder_mnist.ipynb) (MNIST Autoencoder)**:
-    *   Train a fully connected autoencoder to compress MNIST digits into a 2D latent space.
-    *   Reconstruct test digits and plot the 2D cluster map.
 
 ### How to Run the Notebooks:
 First, install the library and Jupyter notebook dependencies:
