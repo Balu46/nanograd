@@ -1,9 +1,9 @@
 import pytest
 import numpy as np
 import torch
-from nanograd.tensor import Tensor
+from nanograd import Tensor
 from nanograd.nn import relu, softmax, Layer, MLP, Conv2D, MaxPool2D, Flatten
-from nanograd.loss import MSE, SoftmaxCrossEntropy
+from nanograd.nn import MSE, SoftmaxCrossEntropy
 from nanograd.optim import SGD, Adam
 import torch.nn.functional as F
 

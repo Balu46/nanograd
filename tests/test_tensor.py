@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-from nanograd.tensor import Tensor
+from nanograd import Tensor
 
 def test_autograd_complex_expression():
     """

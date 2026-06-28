@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import torch
-from nanograd.tensor import Tensor 
+from nanograd import Tensor
 
 # =====================================================================
 # 1. BINARY OPERATION TESTS (Two variables, e.g., addition, multiplication)
