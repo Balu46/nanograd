@@ -56,7 +56,9 @@ Autograd/
 │   ├── mnist_cnn_tutorial.ipynb      # Recreating LeNet-5 CNN on MNIST (96% acc)
 │   ├── polynomial_regression.ipynb   # Fitting polynomial to sine curve via raw Tensors
 │   ├── multiclass_spirals.ipynb      # 3-class spiral classification with softmax
-│   └── loss_landscape_optimization.ipynb # Visualizing SGD vs Adam paths on Beale's surface
+│   ├── loss_landscape_optimization.ipynb # Visualizing SGD vs Adam paths on Beale's surface
+│   ├── cnn_visualization.ipynb       # Visualizing CNN kernels, feature maps & activation dreams
+│   └── gan_2d_tutorial.ipynb         # Adversarial training of a 2D LSGAN on circular points
 │
 ├── tests/                    # Unit tests comparing results with PyTorch
 │   ├── __init__.py
@@ -212,6 +214,14 @@ We provide six interactive Jupyter Notebooks in the `examples/` directory to hel
 5.  **[loss_landscape_optimization.ipynb](examples/loss_landscape_optimization.ipynb) (Optimizer Trajectories)**:
     *   Trace the optimization path of SGD vs Adam on Beale's plateau function.
     *   Observe how Adam dynamically adjusts step size to navigate sharp valleys.
+6.  **[cnn_visualization.ipynb](examples/cnn_visualization.ipynb) (CNN Activations & Dreams)**:
+    *   Plot the learned $5\times5$ filters of the first convolutional layer.
+    *   Feed a digit and inspect intermediate feature maps to see edge/texture detection.
+    *   Synthesize "class dream" images (e.g. digit 8) from noise using gradient ascent.
+7.  **[gan_2d_tutorial.ipynb](examples/gan_2d_tutorial.ipynb) (Generative Adversarial Network)**:
+    *   Build a 2D Least Squares GAN (LSGAN).
+    *   Train a generator to transform random 2D noise into coordinates of a circular ring.
+    *   Plot snapshots of generated points morphing over epochs.
 
 ### How to Run the Notebooks:
 First, install the library and Jupyter notebook dependencies:
