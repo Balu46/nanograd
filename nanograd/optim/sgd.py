@@ -1,4 +1,4 @@
-import numpy as np
+from nanograd.core.backend import get_xp
 
 class SGD:
     """
@@ -14,4 +14,5 @@ class SGD:
         
     def zero_grad(self):
         for param in self.model_params:
-            param.grad = np.zeros(param.data.shape)
+            xp = get_xp(param.data)
+            param.grad = xp.zeros(param.data.shape)

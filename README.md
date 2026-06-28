@@ -57,7 +57,9 @@ Autograd/
 │   ├── polynomial_regression.ipynb   # Fitting polynomial to sine curve via raw Tensors
 │   ├── multiclass_spirals.ipynb      # 3-class spiral classification with softmax
 │   ├── loss_landscape_optimization.ipynb # Visualizing SGD vs Adam paths on Beale's surface
-│   └── cnn_visualization.ipynb       # Visualizing CNN kernels, feature maps & activation dreams
+│   ├── cnn_visualization.ipynb       # Visualizing CNN kernels, feature maps & activation dreams
+│   ├── gpu_classification_demo.ipynb # Dynamic CPU vs GPU classification demo
+│   └── benchmark_vs_pytorch.ipynb    # Performance benchmark against PyTorch
 │
 ├── tests/                    # Unit tests comparing results with PyTorch
 │   ├── __init__.py
@@ -227,6 +229,40 @@ Then, launch the notebook server:
 ```bash
 jupyter notebook examples/
 ```
+
+## GPU Acceleration
+
+**Nanograd** is fully hardware-agnostic, supporting CPU execution (via NumPy) and GPU acceleration (via CuPy/CUDA) out-of-the-box. The framework dynamically switches backends depending on where the data resides using a dispatcher pattern.
+
+### 1. Moving Tensors and Models to GPU
+You can move Tensors and Neural Network Modules to CUDA using `.cuda()` or `.to('cuda')`:
+
+```python
+import numpy as np
+from nanograd import Tensor
+from nanograd.nn import MLP
+
+# Create a Tensor and move to CUDA
+x = Tensor(np.random.randn(256, 1024)).cuda()
+
+# Create a model and move it and all its submodules to CUDA
+model = MLP([1024, 512, 10]).cuda()
+
+# Forward and backward passes run natively on GPU!
+out = model(x)
+out.sum().backward()
+```
+
+### 2. Moving back to CPU
+Similarly, you can bring data back to CPU memory (e.g., for inspection or plotting) via `.cpu()` or `.to('cpu')`:
+```python
+x_cpu = x.cpu()
+```
+
+### 3. GPU Demo Examples
+We have included complete interactive training notebooks in the `examples/` directory showcasing GPU acceleration:
+* **[gpu_classification_demo.ipynb](examples/gpu_classification_demo.ipynb)**: Shows how to train a model on both CPU and GPU and measures speedups.
+* **[benchmark_vs_pytorch.ipynb](examples/benchmark_vs_pytorch.ipynb)**: Runs performance benchmarks comparing Nanograd against PyTorch on CPU and GPU.
 
 ---
 

@@ -6,7 +6,7 @@ import torch
 
 from nanograd import Tensor
 
-def test_autograd_complex_expression():
+def test_autograd_complex_expression(device, to_np):
     """
     Tests the expression: e = c * (a + b) and compares the gradients with PyTorch.
     """
@@ -16,9 +16,9 @@ def test_autograd_complex_expression():
     c_data = [[1.0, 2.0], [1.0, 1.0]]
 
     # 2. COMPUTATIONS IN YOUR ENGINE (nanograd)
-    a_nano = Tensor(np.array(a_data), label='a')
-    b_nano = Tensor(np.array(b_data), label='b')
-    c_nano = Tensor(np.array(c_data), label='c')
+    a_nano = Tensor(np.array(a_data), label='a').to(device)
+    b_nano = Tensor(np.array(b_data), label='b').to(device)
+    c_nano = Tensor(np.array(c_data), label='c').to(device)
 
     e_nano = c_nano * (a_nano + b_nano)
     e_nano.backward()
@@ -33,20 +33,20 @@ def test_autograd_complex_expression():
 
     # 4. ASSERTIONS (VERIFY RESULTS)
     # Check if the output values (forward pass) are equal
-    np.testing.assert_allclose(e_nano.data, e_pt.detach().numpy(), err_msg="Error in forward pass")
+    np.testing.assert_allclose(to_np(e_nano), e_pt.detach().numpy(), err_msg="Error in forward pass")
 
     # Check if the gradients (backward pass) are equal
-    np.testing.assert_allclose(a_nano.grad, a_pt.grad.numpy(), err_msg="Incorrect gradient for 'a'")
-    np.testing.assert_allclose(b_nano.grad, b_pt.grad.numpy(), err_msg="Incorrect gradient for 'b'")
-    np.testing.assert_allclose(c_nano.grad, c_pt.grad.numpy(), err_msg="Incorrect gradient for 'c'")
+    np.testing.assert_allclose(to_np(a_nano.grad), a_pt.grad.numpy(), err_msg="Incorrect gradient for 'a'")
+    np.testing.assert_allclose(to_np(b_nano.grad), b_pt.grad.numpy(), err_msg="Incorrect gradient for 'b'")
+    np.testing.assert_allclose(to_np(c_nano.grad), c_pt.grad.numpy(), err_msg="Incorrect gradient for 'c'")
 
-def test_simple_addition():
+def test_simple_addition(device, to_np):
     """A smaller test verifying addition only."""
-    a = Tensor(np.array([1.0, 2.0]))
-    b = Tensor(np.array([3.0, 4.0]))
+    a = Tensor(np.array([1.0, 2.0])).to(device)
+    b = Tensor(np.array([3.0, 4.0])).to(device)
     c = a + b
     c.backward()
     
     # The derivative of addition is always 1 for each element
-    np.testing.assert_allclose(a.grad, np.array([1.0, 1.0]))
-    np.testing.assert_allclose(b.grad, np.array([1.0, 1.0]))
+    np.testing.assert_allclose(to_np(a.grad), np.array([1.0, 1.0]))
+    np.testing.assert_allclose(to_np(b.grad), np.array([1.0, 1.0]))

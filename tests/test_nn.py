@@ -2,15 +2,15 @@ import pytest
 import numpy as np
 import torch
 from nanograd import Tensor
-from nanograd.nn import relu, softmax, Layer, MLP, Conv2D, MaxPool2D, Flatten
+from nanograd.nn import relu, softmax, Layer, MLP, Conv2D, MaxPool2D, Flatten, Parameter
 from nanograd.nn import MSE, SoftmaxCrossEntropy
 from nanograd.optim import SGD, Adam
 import torch.nn.functional as F
 
-def test_relu():
+def test_relu(device, to_np):
     """Test relu activation function forward and backward passes."""
     x_data = np.array([[-1.0, 0.0, 2.0], [3.0, -0.5, 1.0]])
-    x_nano = Tensor(x_data)
+    x_nano = Tensor(x_data).to(device)
     out_nano = relu(x_nano)
     out_nano.backward()
 
@@ -18,10 +18,10 @@ def test_relu():
     out_pt = torch.relu(x_pt)
     out_pt.backward(torch.ones_like(out_pt))
 
-    np.testing.assert_allclose(out_nano.data, out_pt.detach().numpy())
-    np.testing.assert_allclose(x_nano.grad, x_pt.grad.numpy())
+    np.testing.assert_allclose(to_np(out_nano), out_pt.detach().numpy())
+    np.testing.assert_allclose(to_np(x_nano.grad), x_pt.grad.numpy())
 
-def test_layer():
+def test_layer(device, to_np):
     """Test individual Layer forward and backward passes."""
     np.random.seed(42)
     l = Layer(num_neurons=3, num_inputs=2)
@@ -29,11 +29,12 @@ def test_layer():
     # Set deterministic weights and bias for consistency
     w_data = np.array([[0.5, -0.1, 0.8], [0.2, 0.4, -0.3]])
     b_data = np.array([[0.1, 0.2, -0.1]])
-    l.weights = Tensor(w_data)
-    l.bias = Tensor(b_data)
+    l.weights = Parameter(w_data)
+    l.bias = Parameter(b_data)
+    l.to(device)
 
     x_data = np.array([[1.0, -1.0]])
-    x_nano = Tensor(x_data)
+    x_nano = Tensor(x_data).to(device)
     out_nano = l(x_nano)
     out_nano.backward()
 
@@ -45,12 +46,12 @@ def test_layer():
     out_pt = torch.relu(x_pt @ w_pt + b_pt)
     out_pt.backward(torch.ones_like(out_pt))
 
-    np.testing.assert_allclose(out_nano.data, out_pt.detach().numpy(), rtol=1e-5)
-    np.testing.assert_allclose(l.weights.grad, w_pt.grad.numpy(), rtol=1e-5)
-    np.testing.assert_allclose(l.bias.grad, b_pt.grad.numpy(), rtol=1e-5)
-    np.testing.assert_allclose(x_nano.grad, x_pt.grad.numpy(), rtol=1e-5)
+    np.testing.assert_allclose(to_np(out_nano), out_pt.detach().numpy(), rtol=1e-5)
+    np.testing.assert_allclose(to_np(l.weights.grad), w_pt.grad.numpy(), rtol=1e-5)
+    np.testing.assert_allclose(to_np(l.bias.grad), b_pt.grad.numpy(), rtol=1e-5)
+    np.testing.assert_allclose(to_np(x_nano.grad), x_pt.grad.numpy(), rtol=1e-5)
 
-def test_mlp():
+def test_mlp(device, to_np):
     """Test multi-layer perceptron (MLP) forward and backward passes."""
     np.random.seed(42)
     mlp = MLP([2, 3, 1])
@@ -61,13 +62,14 @@ def test_mlp():
     w2 = np.array([[0.7], [-0.8], [0.9]])
     b2 = np.array([[0.4]])
     
-    mlp.layers[0].weights = Tensor(w1)
-    mlp.layers[0].bias = Tensor(b1)
-    mlp.layers[1].weights = Tensor(w2)
-    mlp.layers[1].bias = Tensor(b2)
+    mlp.layers[0].weights = Parameter(w1)
+    mlp.layers[0].bias = Parameter(b1)
+    mlp.layers[1].weights = Parameter(w2)
+    mlp.layers[1].bias = Parameter(b2)
+    mlp.to(device)
 
     x_data = np.array([[0.5, -0.5]])
-    x_nano = Tensor(x_data)
+    x_nano = Tensor(x_data).to(device)
     out_nano = mlp(x_nano)
     out_nano.backward()
 
@@ -82,29 +84,29 @@ def test_mlp():
     out_pt = torch.relu(h_pt @ w2_pt + b2_pt)
     out_pt.backward(torch.ones_like(out_pt))
 
-    np.testing.assert_allclose(out_nano.data, out_pt.detach().numpy(), rtol=1e-5)
-    np.testing.assert_allclose(mlp.layers[0].weights.grad, w1_pt.grad.numpy(), rtol=1e-5)
-    np.testing.assert_allclose(mlp.layers[0].bias.grad, b1_pt.grad.numpy(), rtol=1e-5)
-    np.testing.assert_allclose(mlp.layers[1].weights.grad, w2_pt.grad.numpy(), rtol=1e-5)
-    np.testing.assert_allclose(mlp.layers[1].bias.grad, b2_pt.grad.numpy(), rtol=1e-5)
+    np.testing.assert_allclose(to_np(out_nano), out_pt.detach().numpy(), rtol=1e-5)
+    np.testing.assert_allclose(to_np(mlp.layers[0].weights.grad), w1_pt.grad.numpy(), rtol=1e-5)
+    np.testing.assert_allclose(to_np(mlp.layers[0].bias.grad), b1_pt.grad.numpy(), rtol=1e-5)
+    np.testing.assert_allclose(to_np(mlp.layers[1].weights.grad), w2_pt.grad.numpy(), rtol=1e-5)
+    np.testing.assert_allclose(to_np(mlp.layers[1].bias.grad), b2_pt.grad.numpy(), rtol=1e-5)
 
-def test_loss_and_optimizer():
+def test_loss_and_optimizer(device, to_np):
     """Test Mean Squared Error (MSE) loss and Stochastic Gradient Descent (SGD) optimizer."""
     np.random.seed(42)
     
     # Model parameters
-    w = Tensor(np.array([[1.5], [-2.0]]))
-    b = Tensor(np.array([[0.5]]))
+    w = Tensor(np.array([[1.5], [-2.0]])).to(device)
+    b = Tensor(np.array([[0.5]])).to(device)
     
     x_data = np.array([[1.0, 2.0], [3.0, 4.0]])
     y_true_data = np.array([[2.5], [5.5]])
     
-    x = Tensor(x_data)
-    y_true = Tensor(y_true_data)
+    x = Tensor(x_data).to(device)
+    y_true = Tensor(y_true_data).to(device)
     
     # Optimizer & Loss
     optimizer = SGD([w, b], learning_rate=0.01)
-    criterion = MSE()
+    criterion = MSE().to(device)
     
     # Forward pass
     y_pred = x @ w + b
@@ -112,23 +114,23 @@ def test_loss_and_optimizer():
     
     # Test zero_grad
     optimizer.zero_grad()
-    assert np.all(w.grad == 0.0)
-    assert np.all(b.grad == 0.0)
+    assert np.all(to_np(w.grad) == 0.0)
+    assert np.all(to_np(b.grad) == 0.0)
     
     loss.backward()
     
     # Keep nanograd gradients for comparison
-    w_grad_nano = w.grad.copy()
-    b_grad_nano = b.grad.copy()
+    w_grad_nano = to_np(w.grad).copy()
+    b_grad_nano = to_np(b.grad).copy()
     
     # Optimizer step
-    w_old = w.data.copy()
-    b_old = b.data.copy()
+    w_old = to_np(w).copy()
+    b_old = to_np(b).copy()
     optimizer.step()
     
     # Verify weight updates
-    np.testing.assert_allclose(w.data, w_old - 0.01 * w_grad_nano)
-    np.testing.assert_allclose(b.data, b_old - 0.01 * b_grad_nano)
+    np.testing.assert_allclose(to_np(w), w_old - 0.01 * w_grad_nano)
+    np.testing.assert_allclose(to_np(b), b_old - 0.01 * b_grad_nano)
     
     # Compare with PyTorch reference
     x_pt = torch.tensor(x_data, requires_grad=False, dtype=torch.double)
@@ -140,11 +142,11 @@ def test_loss_and_optimizer():
     loss_pt = torch.mean((y_pred_pt - y_true_pt) ** 2)
     loss_pt.backward()
     
-    np.testing.assert_allclose(loss.data, loss_pt.detach().numpy(), rtol=1e-5)
+    np.testing.assert_allclose(to_np(loss), loss_pt.detach().numpy(), rtol=1e-5)
     np.testing.assert_allclose(w_grad_nano, w_pt.grad.numpy(), rtol=1e-5)
     np.testing.assert_allclose(b_grad_nano, b_pt.grad.numpy(), rtol=1e-5)
 
-def test_softmax():
+def test_softmax(device, to_np):
     """
     Tests the softmax activation function's forward and backward passes.
     Compares the calculated outputs and gradients against PyTorch's torch.softmax.
@@ -157,10 +159,10 @@ def test_softmax():
                              [0.4, 0.4, 0.2]])
     
     # 1. Forward and backward pass in nanograd
-    x_nano = Tensor(x_data)
+    x_nano = Tensor(x_data).to(device)
     out_nano = softmax(x_nano)
     # Perform a weighted sum to ensure non-zero gradients
-    loss_nano = (out_nano * Tensor(weights_data)).sum()
+    loss_nano = (out_nano * Tensor(weights_data).to(device)).sum()
     loss_nano.backward()
 
     # 2. Forward and backward pass in PyTorch
@@ -171,10 +173,10 @@ def test_softmax():
     loss_pt.backward()
 
     # 3. Verify correctness
-    np.testing.assert_allclose(out_nano.data, out_pt.detach().numpy(), rtol=1e-5, err_msg="Softmax forward values mismatch")
-    np.testing.assert_allclose(x_nano.grad, x_pt.grad.numpy(), rtol=1e-5, err_msg="Softmax backward gradients mismatch")
+    np.testing.assert_allclose(to_np(out_nano), out_pt.detach().numpy(), rtol=1e-5, err_msg="Softmax forward values mismatch")
+    np.testing.assert_allclose(to_np(x_nano.grad), x_pt.grad.numpy(), rtol=1e-5, err_msg="Softmax backward gradients mismatch")
 
-def test_softmax_cross_entropy():
+def test_softmax_cross_entropy(device, to_np):
     """
     Tests the SoftmaxCrossEntropy loss function's forward and backward passes.
     Compares the loss values and gradients of logits against PyTorch's formulation.
@@ -190,9 +192,9 @@ def test_softmax_cross_entropy():
                              [0.0, 1.0, 0.0]])
     
     # 1. Forward and backward pass in nanograd
-    y_pred_nano = Tensor(logits_data, label='logits')
-    y_true_nano = Tensor(targets_data, label='targets')
-    criterion = SoftmaxCrossEntropy()
+    y_pred_nano = Tensor(logits_data, label='logits').to(device)
+    y_true_nano = Tensor(targets_data, label='targets').to(device)
+    criterion = SoftmaxCrossEntropy().to(device)
     loss_nano = criterion(y_pred_nano, y_true_nano)
     loss_nano.backward()
     
@@ -205,10 +207,10 @@ def test_softmax_cross_entropy():
     loss_pt.backward()
     
     # 3. Verify correctness
-    np.testing.assert_allclose(loss_nano.data, loss_pt.detach().numpy(), rtol=1e-5, err_msg="SoftmaxCrossEntropy forward loss mismatch")
-    np.testing.assert_allclose(y_pred_nano.grad, y_pred_pt.grad.numpy(), rtol=1e-5, err_msg="SoftmaxCrossEntropy backward gradients mismatch")
+    np.testing.assert_allclose(to_np(loss_nano), loss_pt.detach().numpy(), rtol=1e-5, err_msg="SoftmaxCrossEntropy forward loss mismatch")
+    np.testing.assert_allclose(to_np(y_pred_nano.grad), y_pred_pt.grad.numpy(), rtol=1e-5, err_msg="SoftmaxCrossEntropy backward gradients mismatch")
 
-def test_conv2d():
+def test_conv2d(device, to_np):
     """
     Tests Conv2D forward and backward passes against PyTorch.
     """
@@ -223,10 +225,11 @@ def test_conv2d():
     stride = 1
     
     conv_nano = Conv2D(in_channels, num_filters, kernel_size, padding, stride)
+    conv_nano.to(device)
     
     # 2. Input data of shape (batch_size=2, channels=3, height=5, width=5)
     x_data = np.random.uniform(-1, 1, size=(2, in_channels, 5, 5))
-    x_nano = Tensor(x_data)
+    x_nano = Tensor(x_data).to(device)
     
     # Forward and backward pass in nanograd
     out_nano = conv_nano(x_nano)
@@ -237,11 +240,11 @@ def test_conv2d():
     x_pt = torch.tensor(x_data, requires_grad=True, dtype=torch.double)
     
     # Reshape weights from (num_filters, in_channels, kh * kw) to (num_filters, in_channels, kh, kw)
-    w_pt_data = conv_nano.weights.data.reshape(num_filters, in_channels, kernel_size[0], kernel_size[1])
+    w_pt_data = to_np(conv_nano.weights).reshape(num_filters, in_channels, kernel_size[0], kernel_size[1])
     w_pt = torch.tensor(w_pt_data, requires_grad=True, dtype=torch.double)
     
     # Reshape bias from (1, num_filters) to (num_filters)
-    b_pt_data = conv_nano.bias.data.reshape(num_filters)
+    b_pt_data = to_np(conv_nano.bias).reshape(num_filters)
     b_pt = torch.tensor(b_pt_data, requires_grad=True, dtype=torch.double)
     
     # Forward and backward pass in PyTorch
@@ -250,12 +253,12 @@ def test_conv2d():
     loss_pt.backward()
     
     # 4. Assert correctness of forward and backward passes
-    np.testing.assert_allclose(out_nano.data, out_pt.detach().numpy(), rtol=1e-5, err_msg="Conv2D forward pass mismatch")
-    np.testing.assert_allclose(x_nano.grad, x_pt.grad.numpy(), rtol=1e-5, err_msg="Conv2D input gradient mismatch")
-    np.testing.assert_allclose(conv_nano.bias.grad, b_pt.grad.numpy().reshape(1, num_filters), rtol=1e-5, err_msg="Conv2D bias gradient mismatch")
-    np.testing.assert_allclose(conv_nano.weights.grad, w_pt.grad.numpy().reshape(num_filters, in_channels, -1), rtol=1e-5, err_msg="Conv2D weights gradient mismatch")
+    np.testing.assert_allclose(to_np(out_nano), out_pt.detach().numpy(), rtol=1e-5, err_msg="Conv2D forward pass mismatch")
+    np.testing.assert_allclose(to_np(x_nano.grad), x_pt.grad.numpy(), rtol=1e-5, err_msg="Conv2D input gradient mismatch")
+    np.testing.assert_allclose(to_np(conv_nano.bias.grad), b_pt.grad.numpy().reshape(1, num_filters), rtol=1e-5, err_msg="Conv2D bias gradient mismatch")
+    np.testing.assert_allclose(to_np(conv_nano.weights.grad), w_pt.grad.numpy().reshape(num_filters, in_channels, -1), rtol=1e-5, err_msg="Conv2D weights gradient mismatch")
 
-def test_max_pool2d():
+def test_max_pool2d(device, to_np):
     """
     Tests MaxPool2D forward and backward passes against PyTorch.
     """
@@ -265,12 +268,12 @@ def test_max_pool2d():
     kernel_size = (2, 2)
     stride = 2
     padding = 0
-    pool_nano = MaxPool2D(kernel_size, stride, padding)
+    pool_nano = MaxPool2D(kernel_size, stride, padding).to(device)
     
     # Input data of shape (batch_size=2, channels=3, height=4, width=4)
     # Ensure values are distinct to avoid argmax ambiguity issues
     x_data = np.random.uniform(-1, 1, size=(2, 3, 4, 4))
-    x_nano = Tensor(x_data)
+    x_nano = Tensor(x_data).to(device)
     
     # Forward and backward pass in nanograd
     out_nano = pool_nano(x_nano)
@@ -284,10 +287,10 @@ def test_max_pool2d():
     loss_pt.backward()
     
     # 3. Assert correctness of forward and backward passes
-    np.testing.assert_allclose(out_nano.data, out_pt.detach().numpy(), rtol=1e-5, err_msg="MaxPool2D forward pass mismatch")
-    np.testing.assert_allclose(x_nano.grad, x_pt.grad.numpy(), rtol=1e-5, err_msg="MaxPool2D input gradient mismatch")
+    np.testing.assert_allclose(to_np(out_nano), out_pt.detach().numpy(), rtol=1e-5, err_msg="MaxPool2D forward pass mismatch")
+    np.testing.assert_allclose(to_np(x_nano.grad), x_pt.grad.numpy(), rtol=1e-5, err_msg="MaxPool2D input gradient mismatch")
 
-def test_adam():
+def test_adam(device, to_np):
     """
     Tests the Adam optimizer's step updates against PyTorch.
     """
@@ -298,8 +301,8 @@ def test_adam():
     b_data = np.array([[0.5]])
     
     # 1. Nanograd setup
-    w_nano = Tensor(w_data.copy())
-    b_nano = Tensor(b_data.copy())
+    w_nano = Tensor(w_data.copy()).to(device)
+    b_nano = Tensor(b_data.copy()).to(device)
     optimizer_nano = Adam([w_nano, b_nano], learning_rate=0.1)
     
     # 2. PyTorch setup
@@ -322,10 +325,10 @@ def test_adam():
         optimizer_pt.step()
         
         # Compare weights and biases after each step
-        np.testing.assert_allclose(w_nano.data, w_pt.detach().numpy(), rtol=1e-5, err_msg=f"Adam weight mismatch at step {step}")
-        np.testing.assert_allclose(b_nano.data, b_pt.detach().numpy(), rtol=1e-5, err_msg=f"Adam bias mismatch at step {step}")
+        np.testing.assert_allclose(to_np(w_nano), w_pt.detach().numpy(), rtol=1e-5, err_msg=f"Adam weight mismatch at step {step}")
+        np.testing.assert_allclose(to_np(b_nano), b_pt.detach().numpy(), rtol=1e-5, err_msg=f"Adam bias mismatch at step {step}")
 
-def test_flatten():
+def test_flatten(device, to_np):
     """
     Tests the Flatten layer's forward and backward passes against PyTorch.
     """
@@ -334,8 +337,8 @@ def test_flatten():
     # 1. Input data of shape (batch_size=2, channels=3, height=4, width=4)
     x_data = np.random.uniform(-1, 1, size=(2, 3, 4, 4))
     
-    x_nano = Tensor(x_data)
-    flatten_nano = Flatten()
+    x_nano = Tensor(x_data).to(device)
+    flatten_nano = Flatten().to(device)
     out_nano = flatten_nano(x_nano)
     loss_nano = out_nano.sum()
     loss_nano.backward()
@@ -347,8 +350,5 @@ def test_flatten():
     loss_pt.backward()
     
     # 3. Assertions
-    np.testing.assert_allclose(out_nano.data, out_pt.detach().numpy(), rtol=1e-5, err_msg="Flatten forward pass mismatch")
-    np.testing.assert_allclose(x_nano.grad, x_pt.grad.numpy(), rtol=1e-5, err_msg="Flatten input gradient mismatch")
-
-
-
+    np.testing.assert_allclose(to_np(out_nano), out_pt.detach().numpy(), rtol=1e-5, err_msg="Flatten forward pass mismatch")
+    np.testing.assert_allclose(to_np(x_nano.grad), x_pt.grad.numpy(), rtol=1e-5, err_msg="Flatten input gradient mismatch")
