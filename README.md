@@ -13,6 +13,7 @@ The project contains a complete implementation of backpropagation on computation
 - [Quick Start](#quick-start)
   - [1. Basic Autograd](#1-basic-autograd)
   - [2. Building and Training a Neural Network (MLP)](#2-building-and-training-a-neural-network-mlp)
+- [Tutorials & Jupyter Notebooks](#tutorials--jupyter-notebooks)
 - [Testing](#testing)
 - [How It Works](#how-it-works)
 - [License](#license)
@@ -46,9 +47,17 @@ Autograd/
 ├── nanograd/                 # Main package
 │   ├── __init__.py           # Public API exports
 │   ├── tensor.py             # Tensor class and core autograd operations
-│   ├── nn.py                 # Neural network layers (Layer, MLP, relu)
-│   ├── loss.py               # Loss functions (MSE)
-│   └── optim.py              # Optimizers (SGD)
+│   ├── nn.py                 # Neural network layers (Layer, MLP, relu, Conv2D, etc.)
+│   ├── loss.py               # Loss functions (MSE, SoftmaxCrossEntropy)
+│   └── optim.py              # Optimizers (SGD, Adam)
+│
+├── examples/                 # Interactive Jupyter Notebook tutorials
+│   ├── nanograd_tutorial.ipynb       # Basic Tensors & MLP binary classification
+│   ├── mnist_cnn_tutorial.ipynb      # Recreating LeNet-5 CNN on MNIST (96% acc)
+│   ├── polynomial_regression.ipynb   # Fitting polynomial to sine curve via raw Tensors
+│   ├── multiclass_spirals.ipynb      # 3-class spiral classification with softmax
+│   ├── loss_landscape_optimization.ipynb # Visualizing SGD vs Adam paths on Beale's surface
+│   └── autoencoder_mnist.ipynb       # Unsupervised MNIST Autoencoder & 2D bottleneck projection
 │
 ├── tests/                    # Unit tests comparing results with PyTorch
 │   ├── __init__.py
@@ -179,6 +188,43 @@ for epoch in range(100):
 
 print("\nPredictions after training:")
 print(model(X).data)
+```
+
+---
+
+## Tutorials & Jupyter Notebooks
+
+We provide six interactive Jupyter Notebooks in the `examples/` directory to help you learn and explore the capabilities of the `nanograd` engine:
+
+1.  **[nanograd_tutorial.ipynb](examples/nanograd_tutorial.ipynb) (Basic Tutorial)**:
+    *   Learn how to build computation graphs and calculate gradients.
+    *   Train an MLP to solve a non-linear concentric circles classification problem.
+    *   Perform forward and backward passes using CNN components.
+2.  **[mnist_cnn_tutorial.ipynb](examples/mnist_cnn_tutorial.ipynb) (MNIST LeNet-5)**:
+    *   Recreate the classic **LeNet-5** CNN architecture.
+    *   Train the model on the MNIST digits dataset using Adam and Softmax Cross Entropy.
+    *   Achieve **96%+ test accuracy** and visualize predictions.
+3.  **[polynomial_regression.ipynb](examples/polynomial_regression.ipynb) (Polynomial Regression)**:
+    *   Fit a 3rd-degree polynomial to a noisy sine curve using raw Tensors.
+    *   Manually code a gradient descent training loop without using layers.
+4.  **[multiclass_spirals.ipynb](examples/multiclass_spirals.ipynb) (Multiclass Spirals)**:
+    *   Classify the 3-class spiral dataset.
+    *   Evaluate output boundaries with an MLP, Softmax, and Cross Entropy.
+5.  **[loss_landscape_optimization.ipynb](examples/loss_landscape_optimization.ipynb) (Optimizer Trajectories)**:
+    *   Trace the optimization path of SGD vs Adam on Beale's plateau function.
+    *   Observe how Adam dynamically adjusts step size to navigate sharp valleys.
+6.  **[autoencoder_mnist.ipynb](examples/autoencoder_mnist.ipynb) (MNIST Autoencoder)**:
+    *   Train a fully connected autoencoder to compress MNIST digits into a 2D latent space.
+    *   Reconstruct test digits and plot the 2D cluster map.
+
+### How to Run the Notebooks:
+First, install the library and Jupyter notebook dependencies:
+```bash
+pip install -e ".[dev]" notebook matplotlib
+```
+Then, launch the notebook server:
+```bash
+jupyter notebook examples/
 ```
 
 ---
