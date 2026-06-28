@@ -46,10 +46,21 @@ Autograd/
 │
 ├── nanograd/                 # Main package
 │   ├── __init__.py           # Public API exports
-│   ├── tensor.py             # Tensor class and core autograd operations
-│   ├── nn.py                 # Neural network layers (Layer, MLP, relu, Conv2D, etc.)
-│   ├── loss.py               # Loss functions (MSE, SoftmaxCrossEntropy)
-│   └── optim.py              # Optimizers (SGD, Adam)
+│   ├── core/                 # Core autograd engine
+│   │   ├── __init__.py
+│   │   ├── tensor.py         # Tensor class and autograd engine
+│   │   └── backend.py        # Hardware-agnostic array dispatcher (NumPy/CuPy)
+│   ├── nn/                   # Neural network layers and modules
+│   │   ├── __init__.py
+│   │   ├── module.py         # Base Module and Parameter classes
+│   │   ├── linear.py         # Fully-connected layers (Layer, MLP, Flatten)
+│   │   ├── conv.py           # Convolutional & pooling layers (Conv2D, MaxPool2D)
+│   │   ├── activations.py    # Activation functions (relu, softmax)
+│   │   └── loss.py           # Loss functions (MSE, SoftmaxCrossEntropy)
+│   └── optim/                # Optimizers
+│       ├── __init__.py
+│       ├── sgd.py            # SGD optimizer
+│       └── adam.py           # Adam optimizer
 │
 ├── examples/                 # Interactive Jupyter Notebook tutorials
 │   ├── nanograd_tutorial.ipynb       # Basic Tensors & MLP binary classification
