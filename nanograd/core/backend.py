@@ -9,8 +9,8 @@ except ImportError:
 
 def get_xp(array):
     """
-    Dyspozytor. Zwraca bibliotekę 'cupy', jeśli 'array' leży w VRAM, 
-    lub 'numpy', jeśli 'array' leży w RAM.
+    Dispatcher. Returns 'cupy' module if the input array resides in GPU VRAM,
+    or 'numpy' if it resides in system RAM.
     """
     if CUPY_AVAILABLE:
         return cp.get_array_module(array)
